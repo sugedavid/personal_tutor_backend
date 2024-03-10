@@ -1,22 +1,28 @@
-from fastapi import FastAPI, HTTPException
-from schemas import UserRegistrationRequest, UserRegistrationResponse, UserLoginRequest, UserLoginResponse
+from fastapi import FastAPI, HTTPException, Query
+from schemas import UserRegistrationRequest, UserRegistrationResponse, UserLoginRequest, UserLoginResponse, CreateAssistantRequest, CreateAssistantResponse, AssistantResponse, MessageRequest, MessageResponse
 from dotenv import load_dotenv
 import firebase_admin
-from firebase_admin import auth, exceptions
-import requests
+from firebase_admin import auth, firestore, exceptions
+from openai import OpenAI
+# import requests
 import os
 
 # load_dotenv()
 
 app = FastAPI()
 
-# FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
+FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 
-# Initialize Firebase Admin SDK
-cred = firebase_admin.credentials.Certificate("serviceAccountKey.json")
-firebase_admin.initialize_app(cred)
+# initialize Firebase Admin SDK
+firebase_cred = firebase_admin.credentials.Certificate("serviceAccountKey.json")
+firebase_admin.initialize_app(firebase_cred)
 
-# register user endpoint
+db = firestore.client()
+
+# initialize OpenAI API
+openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
+
+# register user api
 @app.post("/v1/register", response_model=UserRegistrationResponse)
 async def register_user(user_data: UserRegistrationRequest):
     try:
@@ -25,56 +31,116 @@ async def register_user(user_data: UserRegistrationRequest):
             email=user_data.email,
             password=user_data.password
         )
-        return UserRegistrationResponse(userId=user.uid)
+
+        # save user data to firestore
+        doc_ref = db.collection("users").document(user.uid)
+        doc_ref.set({"uid": user.uid, "email": user_data.email, "type": user_data.type})
+
+        return UserRegistrationResponse(user_id=user.uid)
     except exceptions.FirebaseError as e:
         raise HTTPException(status_code=400, detail=str(e))
     
-# # login user endpoint
-# @app.post("/v1/login", response_model=UserLoginResponse)
-# async def login_user(user_data: UserLoginRequest):
-#     try:
-#         # sign in user with provided email and password
-#         user = auth.get_user_by_email(user_data.email)
-#         id_token = user.get_id_token()
-#         refresh_token = user.get_refresh_token()
-
-#         return UserLoginResponse(
-#             idToken=id_token,
-#             refreshToken=refresh_token,
-#             authTime=user.auth_time,
-#             userId=user.uid,
-#             emailVerified=user.email_verified
-#         )
-#     except auth.AuthError as e:
-#         raise HTTPException(status_code=400, detail=str(e))
-#     except requests.exceptions.RequestException as e:
-#         raise HTTPException(status_code=500, detail=str(e))
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=str(e))
+# create assistant api
+@app.post("/v1/assistants", response_model=CreateAssistantResponse)
+async def create_assistant(user_data: CreateAssistantRequest):
+    try:
+        # create assistant
+        assistant = openai_client.beta.assistants.create(
+            name=user_data.name,
+            instructions=user_data.instructions,
+            tools=user_data.tools,
+            model="gpt-3.5-turbo-1106"
+        )
+        
+        return CreateAssistantResponse(assistant_id=assistant.id)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
-# @app.post("/login", response_model=UserLoginResponse)
-# async def login_user(user_data: UserLoginRequest):
-#     try:
-#         # Authenticate user with provided email and password
-#         user = auth.get_user_by_email(user_data.email)
-#         if user:
-#             # if user exists, attempt to sign in
-#             user = auth.authenticate(email=user_data.email, password=user_data.password)
-#             if user:
-#                 # if authentication successful, return user UID
-#                 return  UserLoginResponse(
-#                     idToken=user.get_id_token(),
-#                     refreshToken=user.get_refresh_token(),
-#                     authTime=user.auth_time,
-#                     userId=user.uid,
-#                     emailVerified=user.email_verified
-#                 )
-#             else:
-#                 # if authentication fails, raise HTTPException
-#                 raise HTTPException(status_code=401, detail="Incorrect email or password")
-#         else:
-#             # if user does not exist, raise HTTPException
-#             raise HTTPException(status_code=401, detail="User not found")
-#     except exceptions.FirebaseError as e:
-#         # Handle authentication errors
-#         raise HTTPException(status_code=500, detail=str(e))
+# fetch assistants api
+@app.get("/v1/assistants", response_model=AssistantResponse)
+async def list_assistants(order: str = Query("desc"), limit: int = Query(20)):
+    try:
+        my_assistants = openai_client.beta.assistants.list(
+            order=order,
+            limit=str(limit),
+        )
+
+        # convert assistant instances to dictionaries
+        assistant_data = [assistant.model_dump() for assistant in my_assistants.data]
+        
+        return AssistantResponse(object=my_assistants.object, data=assistant_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+# fetch threads api
+@app.get("/v1/threads")
+async def list_threads(order: str = Query("created_at"), limit: int = Query(20)):
+    try:
+        # threads = openai_client.beta.threads.list(
+        #     order=order,
+        #     limit=str(limit),
+        # )
+
+        doc_ref = db.collection("threads").limit(limit).order_by(order)
+        doc = doc_ref.get()
+
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# create message api
+@app.post("/v1/messages", response_model=MessageResponse)
+async def create_message(user_data: MessageRequest):
+    try:
+        thread_id = user_data.thread_id
+        instructions = user_data.instructions if user_data.instructions else "Please address the user as {user_data.firstName}. The user is a {user_data.userType}"
+
+        # check if thread exists, if not create a new thread
+        if not user_data.thread_id:
+            thread = openai_client.beta.threads.create()
+            thread_id = thread.id
+
+            # save threadId to firestore
+            doc_ref = db.collection("threads").document(thread_id)
+            doc_ref.set({"thread_id": thread_id, "assistant_id": user_data.assistant_id, "user_id": user_data.user_id, "created_at": thread.created_at})
+
+        # create message
+        openai_client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=user_data.content
+        )
+
+        # run assistant
+        openai_client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=user_data.assistant_id,
+            instructions=instructions,
+        )
+
+        # assistant response
+        messages = openai_client.beta.threads.messages.list(
+            thread_id=thread.id
+        )
+
+        message_data = [message.model_dump() for message in messages.data]
+
+        return MessageResponse(object=messages.object, data=message_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# fetch messages api
+@app.get("/v1/messages", response_model=MessageResponse)
+async def list_messages(thread_id: str):
+    try:
+        messages = openai_client.beta.threads.messages.list(
+            thread_id=thread_id
+        )
+
+        # convert message instances to dictionaries
+        message_data = [message.model_dump() for message in messages.data]
+
+        return MessageResponse(object=messages.object, data=message_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
