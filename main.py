@@ -1,14 +1,13 @@
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from schemas import UserRegistrationRequest, UserRegistrationResponse, UserLoginRequest, UserLoginResponse, CreateAssistantRequest, CreateAssistantResponse, AssistantResponse, MessageRequest, MessageResponse
+from schemas import UserRegistrationRequest, UserRegistrationResponse, MessageRequest, MessageResponse
 from dotenv import load_dotenv
 import firebase_admin
 from firebase_admin import auth, firestore, exceptions
 from openai import OpenAI
-# import requests
 import os
 
-# load_dotenv()
+from tutors.routes import router as tutors_router
 
 app = FastAPI()
 
@@ -37,6 +36,8 @@ db = firestore.client()
 # initialize OpenAI API
 openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
 
+app.include_router(tutors_router, prefix="/v1")
+
 # register user api
 @app.post("/v1/register", response_model=UserRegistrationResponse)
 async def register_user(user_data: UserRegistrationRequest):
@@ -54,38 +55,6 @@ async def register_user(user_data: UserRegistrationRequest):
         return UserRegistrationResponse(user_id=user.uid)
     except exceptions.FirebaseError as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-# create assistant api
-@app.post("/v1/assistants", response_model=CreateAssistantResponse)
-async def create_assistant(user_data: CreateAssistantRequest):
-    try:
-        # create assistant
-        assistant = openai_client.beta.assistants.create(
-            name=user_data.name,
-            instructions=user_data.instructions,
-            tools=user_data.tools,
-            model="gpt-3.5-turbo-1106"
-        )
-        
-        return CreateAssistantResponse(assistant_id=assistant.id)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-# fetch assistants api
-@app.get("/v1/assistants", response_model=AssistantResponse)
-async def list_assistants(order: str = Query("desc"), limit: int = Query(20)):
-    try:
-        my_assistants = openai_client.beta.assistants.list(
-            order=order,
-            limit=str(limit),
-        )
-
-        # convert assistant instances to dictionaries
-        assistant_data = [assistant.model_dump() for assistant in my_assistants.data]
-        
-        return AssistantResponse(object=my_assistants.object, data=assistant_data)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
     
 # fetch threads api
 @app.get("/v1/threads")
