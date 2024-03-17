@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from schemas import UserRegistrationRequest, UserRegistrationResponse, UserLoginRequest, UserLoginResponse, CreateAssistantRequest, CreateAssistantResponse, AssistantResponse, MessageRequest, MessageResponse
 from dotenv import load_dotenv
 import firebase_admin
@@ -10,6 +11,20 @@ import os
 # load_dotenv()
 
 app = FastAPI()
+
+# CORS configuration
+origins = [
+    "http://localhost",
+    "http://localhost:3000",  # Next.js app origin
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=["*"],
+)
 
 FIREBASE_API_KEY = os.getenv("FIREBASE_API_KEY")
 
