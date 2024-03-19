@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from openai import OpenAI
+from utils import validate_firebase_token
 import os
 
-from schemas import (AssistantResponse, CreateAssistantRequest, CreateAssistantResponse)
+from schemas_t.tutors_schema import (AssistantResponse, CreateAssistantRequest, CreateAssistantResponse)
 
 router = APIRouter()
 
@@ -10,7 +11,7 @@ openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
 
 # create tutor api
 @router.post("/tutors", response_model=CreateAssistantResponse)
-async def create_tutor(user_data: CreateAssistantRequest):
+async def create_tutor(user_data: CreateAssistantRequest, token: str = Depends(validate_firebase_token)):
     try:
         # create assistant
         assistant = openai_client.beta.assistants.create(
@@ -26,7 +27,7 @@ async def create_tutor(user_data: CreateAssistantRequest):
     
 # update tutor api
 @router.put("/tutors/{assistant_id}")
-async def update_tutor(assistant_id: str, user_data: CreateAssistantRequest):
+async def update_tutor(assistant_id: str, user_data: CreateAssistantRequest, token: str = Depends(validate_firebase_token)):
     try:
         # update assistant
         assistant = openai_client.beta.assistants.update(
@@ -42,7 +43,7 @@ async def update_tutor(assistant_id: str, user_data: CreateAssistantRequest):
     
 # delete tutor api
 @router.delete("/tutors/{assistant_id}")
-async def delete_tutor(assistant_id: str):
+async def delete_tutor(assistant_id: str, token: str = Depends(validate_firebase_token)):
     try:
         # delete assistant
         assistant = openai_client.beta.assistants.delete(
@@ -55,7 +56,7 @@ async def delete_tutor(assistant_id: str):
     
 # fetch tutors api
 @router.get("/tutors", response_model=AssistantResponse)
-async def list_tutors(order: str = Query("desc"), limit: int = Query(20)):
+async def list_tutors(order: str = Query("desc"), limit: int = Query(20), token: str = Depends(validate_firebase_token)):
     try:
         my_assistants = openai_client.beta.assistants.list(
             order=order,

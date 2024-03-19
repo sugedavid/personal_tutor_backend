@@ -1,13 +1,16 @@
-from fastapi import FastAPI, HTTPException, Query
-from fastapi.middleware.cors import CORSMiddleware
-from schemas import UserRegistrationRequest, UserRegistrationResponse, MessageRequest, MessageResponse
-from dotenv import load_dotenv
-import firebase_admin
-from firebase_admin import auth, firestore, exceptions
-from openai import OpenAI
 import os
 
-from tutors.routes import router as tutors_router
+import firebase_admin
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import OAuth2AuthorizationCodeBearer
+from firebase_admin import auth, exceptions, firestore
+from openai import OpenAI
+
+from schemas import (MessageRequest, MessageResponse, UserRegistrationRequest,
+                     UserRegistrationResponse)
+from routes.tutors_route import router as tutors_router
 
 app = FastAPI()
 
