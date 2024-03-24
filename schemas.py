@@ -1,8 +1,8 @@
-from pydantic import BaseModel,RootModel,validator,Field,field_validator
+from typing import Dict, List, Optional, Union
+
+from pydantic import BaseModel
 from pydantic_extra_types.isbn import *
-from typing import List, Optional, Dict, Union
-from uuid import UUID, uuid4
-from enum import Enum
+
 
 # firebase schemas
 class UserRegistrationRequest(BaseModel):
@@ -49,12 +49,3 @@ class Message(BaseModel):
 class MessageResponse(BaseModel):
     object: str
     data: List[Message]
-
-class Thread(BaseModel):
-    thread_id: str
-    assistant_id: str
-    user_id: str
-    created_at: int
-
-class ThreadsResponse(BaseModel):
-    data: List[Thread]

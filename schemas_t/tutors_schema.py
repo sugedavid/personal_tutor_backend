@@ -1,12 +1,12 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
-from pydantic import BaseModel, Field, RootModel, field_validator, validator
+from pydantic import BaseModel
 from pydantic_extra_types.isbn import *
 
 
 class AssistantTools(BaseModel):
     type: str
-    
+
 class CreateAssistantRequest(BaseModel):
     name: str
     instructions: str
@@ -23,7 +23,7 @@ class Assistant(BaseModel):
     description: Any  # can be either a string or null
     model: str
     instructions: str
-    tools: List[str]
+    tools: List[AssistantTools]
     file_ids: List[str]
     metadata: Dict[str, Any]
 
