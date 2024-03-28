@@ -36,8 +36,8 @@ Backend for the Personal Tutor Client
 }
 ```
 
-5. Create a .env file and add the following keys:
+5. Create a .env file at the root of the project and add the following key:
    ```
-   FIREBASE_API_KEY
    PERSONAL_TUTOR_OPENAI_API_KEY
    ```
+6. Add a `serviceAccountKey.json` file at the root of the project. This contains credentials used to authenticate and authorize access to Firebase services.

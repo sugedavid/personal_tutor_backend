@@ -7,7 +7,7 @@ from firebase_admin import firestore
 from openai import OpenAI
 
 from schemas_t.module_schema import ModuleRequest, ModuleResponse
-from schemas_t.tutors_schema import Assistant
+from schemas_t.tutor_schema import Assistant
 from utils import validate_firebase_token
 
 router = APIRouter()
