@@ -8,9 +8,10 @@ from fastapi.security import OAuth2AuthorizationCodeBearer
 from firebase_admin import auth, exceptions, firestore
 from openai import OpenAI
 
+from routes.modules_route import router as modules_router
+from routes.tutors_route import router as tutors_router
 from schemas import (MessageRequest, MessageResponse, UserRegistrationRequest,
                      UserRegistrationResponse)
-from routes.tutors_route import router as tutors_router
 
 app = FastAPI()
 
@@ -39,7 +40,9 @@ db = firestore.client()
 # initialize OpenAI API
 openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
 
+# routes
 app.include_router(tutors_router, prefix="/v1")
+app.include_router(modules_router, prefix="/v1")
 
 # register user api
 @app.post("/v1/register", response_model=UserRegistrationResponse)
@@ -83,15 +86,6 @@ async def create_message(user_data: MessageRequest):
         thread_id = user_data.thread_id
         instructions = user_data.instructions if user_data.instructions else "Please address the user as {user_data.firstName}. The user is a {user_data.userType}"
 
-        # check if thread exists, if not create a new thread
-        if not user_data.thread_id:
-            thread = openai_client.beta.threads.create()
-            thread_id = thread.id
-
-            # save threadId to firestore
-            doc_ref = db.collection("threads").document(thread_id)
-            doc_ref.set({"thread_id": thread_id, "assistant_id": user_data.assistant_id, "user_id": user_data.user_id, "created_at": thread.created_at})
-
         # create message
         openai_client.beta.threads.messages.create(
             thread_id=thread_id,
@@ -108,7 +102,7 @@ async def create_message(user_data: MessageRequest):
 
         # assistant response
         messages = openai_client.beta.threads.messages.list(
-            thread_id=thread.id
+            thread_id=thread_id
         )
 
         message_data = [message.model_dump() for message in messages.data]

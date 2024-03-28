@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query, Depends
-from openai import OpenAI
-from utils import validate_firebase_token
 import os
 
-from schemas_t.tutors_schema import (AssistantResponse, CreateAssistantRequest, CreateAssistantResponse)
+from fastapi import APIRouter, Depends, HTTPException, Query
+from openai import OpenAI
+
+from schemas_t.tutors_schema import (AssistantResponse, CreateAssistantRequest,
+                                     CreateAssistantResponse)
+from utils import validate_firebase_token
 
 router = APIRouter()
 
@@ -54,7 +56,7 @@ async def delete_tutor(assistant_id: str, token: str = Depends(validate_firebase
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-# fetch tutors api
+# list tutors api
 @router.get("/tutors", response_model=AssistantResponse)
 async def list_tutors(order: str = Query("desc"), limit: int = Query(20), token: str = Depends(validate_firebase_token)):
     try:
