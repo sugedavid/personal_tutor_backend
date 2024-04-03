@@ -3,8 +3,8 @@ import os
 from fastapi import APIRouter, Depends, HTTPException, Query
 from openai import OpenAI
 
-from schemas_t.tutor_schema import (AssistantResponse, CreateAssistantRequest,
-                                     CreateAssistantResponse)
+from schemas.tutor_schema import (AssistantResponse, CreateAssistantRequest,
+                                  CreateAssistantResponse)
 from utils import validate_firebase_token
 
 router = APIRouter()
