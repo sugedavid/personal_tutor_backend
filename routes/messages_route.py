@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from firebase_admin import firestore
 from openai import OpenAI
 
-from schemas_t.message_schema import MessageRequest, MessageResponse
+from schemas.message_schema import MessageRequest, MessageResponse
 from utils import validate_firebase_token
 
 router = APIRouter()
