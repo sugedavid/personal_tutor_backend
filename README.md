@@ -41,3 +41,19 @@ Backend for the Personal Tutor Client
    PERSONAL_TUTOR_OPENAI_API_KEY
    ```
 6. Add a `serviceAccountKey.json` file at the root of the project. This contains credentials used to authenticate and authorize access to Firebase services.
+
+## Docker
+
+1. Launch the Docker application.
+
+2. To build the Docker image, use the command at the root of the project:
+
+```
+docker build -t personal_tutor_backend .
+```
+
+3. To run the Docker container, use the command at the root of the project:
+
+```
+docker run --env-file .env -d -p 8000:8000 personal_tutor_backend
+```
