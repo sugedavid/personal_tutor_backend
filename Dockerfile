@@ -1,24 +1,23 @@
-# official Python runtime as the base image
-FROM python:3.12.2-slim
+FROM python:3.12-slim
 
-# environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# working directory in the container
-WORKDIR /app
-
-# copy the dependencies file to the working directory
-COPY requirements.txt .
-
-# install any dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# copy the rest of the application code to the working directory
-COPY . .
-
-# expose port 8000 to allow external access
 EXPOSE 8000
 
-# command to run the FastAPI application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
+# turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+# install pip requirements
+COPY requirements.txt .
+RUN python -m pip install -r requirements.txt
+
+WORKDIR /app
+COPY . /app
+
+# creates a non-root user with an explicit UID and adds permission to access the /app folder
+RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
+USER appuser
+
+# during debugging, this entry point will be overridden. For more information
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "-k", "uvicorn.workers.UvicornWorker", "main:app"]
