@@ -10,7 +10,7 @@ Backend for the Personal Tutor Client
 
    - On Windows: `.venv\Scripts\activate`
 
-   - On MacOS: `source .venv/bin/activate`
+   - On Linux/macOS: `source .venv/bin/activate`
 
 3. Install libraries defined in the requirements.txt file:
 
@@ -57,3 +57,19 @@ docker build -t personal_tutor_backend .
 ```
 docker run --env-file .env -d -p 8000:8000 personal_tutor_backend
 ```
+
+## Redis - Rate Limiting
+
+1. Install Redis:
+
+   - On Windows: Download the appropriate installer from the official [Redis website](https://redis.io/docs/install/install-redis/install-redis-on-windows/)
+
+   - On Linux/macOS: `brew install redis`
+
+2. Run the Redis server:
+
+   - On Windows: Start the Redis service from the Services Management Console.
+
+   - On Linux/macOS: `redis-server`
+
+3. Check if server is running: `redis-cli ping`

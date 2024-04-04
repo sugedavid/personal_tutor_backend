@@ -1,19 +1,34 @@
+from contextlib import asynccontextmanager
 import os
 
 import firebase_admin
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI,Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
+from fastapi_limiter import FastAPILimiter
+from fastapi_limiter.depends import RateLimiter
 from firebase_admin import firestore
 from openai import OpenAI
+import redis.asyncio as redis
+import uvicorn
 
 from routes.messages_route import router as messages_router
 from routes.modules_route import router as modules_router
 from routes.registration_route import router as registration_router
 from routes.tutors_route import router as tutors_router
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    redis_connection = redis.from_url("redis://localhost:6379", encoding="utf8")
+    await FastAPILimiter.init(redis_connection)
+    yield
+    await FastAPILimiter.close()
+
 # initialize FastAPI
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
+
+# config rate limiting
+limit = RateLimiter(times=20, seconds=60)
 
 # CORS configuration
 origins = [
@@ -44,7 +59,10 @@ async def open_docs():
     return RedirectResponse(url="/docs")
 
 # routes config
-app.include_router(registration_router, prefix="/v1", tags=["User"])
-app.include_router(tutors_router, prefix="/v1", tags=["Tutors"])
-app.include_router(modules_router, prefix="/v1", tags=["Modules"])
-app.include_router(messages_router, prefix="/v1", tags=["Messages"])
+app.include_router(registration_router, prefix="/v1", tags=["User"], dependencies=[Depends(limit)])
+app.include_router(tutors_router, prefix="/v1", tags=["Tutors"], dependencies=[Depends(limit)])
+app.include_router(modules_router, prefix="/v1", tags=["Modules"], dependencies=[Depends(limit)])
+app.include_router(messages_router, prefix="/v1", tags=["Messages"], dependencies=[Depends(limit)])
+
+if __name__ == "__main__":
+    uvicorn.run("main:app", debug=True, reload=True)
