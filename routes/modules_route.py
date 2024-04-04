@@ -5,6 +5,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, Query
 from firebase_admin import firestore
 from openai import OpenAI
+from fastapi_limiter.depends import RateLimiter
 
 from schemas.module_schema import ModuleRequest, ModuleResponse
 from utils import validate_firebase_token
@@ -55,7 +56,9 @@ async def update_module(id: str, user_data: ModuleRequest, db: firestore.client 
         if user_data.name:
             update_data["name"] = user_data.name
         if user_data.assistant_id:
-            update_data["assistant_id"] = user_data.assistant_id
+            # get assistant info
+            assistant = openai_client.beta.assistants.retrieve(user_data.assistant_id)
+            update_data["assistant"] = assistant.model_dump()
 
         doc_ref.update(update_data)
         
