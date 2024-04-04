@@ -11,4 +11,5 @@ class UserRegistrationResponse(BaseModel):
     user_id: str
     first_name: str
     last_name: str
+    display_name: str
     email: str

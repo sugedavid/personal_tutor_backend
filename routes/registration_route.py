@@ -20,6 +20,7 @@ async def register_user(user_data: UserRegistrationRequest, db: firestore.client
     try:
         # create user with provided email and password
         user = auth.create_user(
+            display_name=f"{user_data.first_name} {user_data.last_name}",
             email=user_data.email,
             password=user_data.password
         )
@@ -31,10 +32,13 @@ async def register_user(user_data: UserRegistrationRequest, db: firestore.client
                 "uid": user.uid,
                 "first_name":user_data.first_name,
                 "last_name":user_data.last_name,
-                "email": user_data.email
+                "display_name": user.display_name,
+                "email": user_data.email,
+                "credits": 5,
+                "currency":"£"
             }
         )
 
-        return UserRegistrationResponse(user_id=user.uid, first_name=user_data.first_name, last_name=user_data.last_name, email=user_data.email)
+        return UserRegistrationResponse(user_id=user.uid, first_name=user_data.first_name, last_name=user_data.last_name, display_name=user.display_name, email=user.email)
     except exceptions.FirebaseError as e:
         raise HTTPException(status_code=400, detail=str(e))

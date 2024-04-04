@@ -2,6 +2,7 @@ import os
 
 import firebase_admin
 from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from firebase_admin import firestore
 from openai import OpenAI
@@ -38,8 +39,12 @@ db = firestore.client()
 # initialize OpenAI API
 openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
 
+@app.get("/", tags=["API documentation"])
+async def open_docs():
+    return RedirectResponse(url="/docs")
+
 # routes config
-app.include_router(messages_router, prefix="/v1")
-app.include_router(modules_router, prefix="/v1")
-app.include_router(tutors_router, prefix="/v1")
-app.include_router(registration_router, prefix="/v1")
+app.include_router(registration_router, prefix="/v1", tags=["User"])
+app.include_router(tutors_router, prefix="/v1", tags=["Tutors"])
+app.include_router(modules_router, prefix="/v1", tags=["Modules"])
+app.include_router(messages_router, prefix="/v1", tags=["Messages"])
