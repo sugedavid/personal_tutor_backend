@@ -1,21 +1,23 @@
-from contextlib import asynccontextmanager
 import os
+from contextlib import asynccontextmanager
 
 import firebase_admin
-from fastapi import FastAPI,Depends, Request
+import redis.asyncio as redis
+import uvicorn
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi_limiter import FastAPILimiter
 from fastapi_limiter.depends import RateLimiter
 from firebase_admin import firestore
 from openai import OpenAI
-import redis.asyncio as redis
-import uvicorn
 
+from routes.credits_route import router as credits_router
 from routes.messages_route import router as messages_router
 from routes.modules_route import router as modules_router
 from routes.registration_route import router as registration_router
 from routes.tutors_route import router as tutors_router
+
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
@@ -63,6 +65,7 @@ app.include_router(registration_router, prefix="/v1", tags=["User"], dependencie
 app.include_router(tutors_router, prefix="/v1", tags=["Tutors"], dependencies=[Depends(limit)])
 app.include_router(modules_router, prefix="/v1", tags=["Modules"], dependencies=[Depends(limit)])
 app.include_router(messages_router, prefix="/v1", tags=["Messages"], dependencies=[Depends(limit)])
+app.include_router(credits_router, prefix="/v1", tags=["Credits"], dependencies=[Depends(limit)])
 
 if __name__ == "__main__":
     uvicorn.run("main:app", debug=True, reload=True)

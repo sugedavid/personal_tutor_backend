@@ -2,26 +2,34 @@ import os
 import time
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Security
+from fastapi.security import OAuth2PasswordBearer
 from firebase_admin import firestore
 from openai import OpenAI
-from fastapi_limiter.depends import RateLimiter
 
+from schemas.credit_schema import CreditTypeEnum
 from schemas.module_schema import ModuleRequest, ModuleResponse
-from utils import validate_firebase_token
+from utils import update_credit, validate_firebase_token
 
 router = APIRouter()
 openai_client = OpenAI(api_key=os.getenv("PERSONAL_TUTOR_OPENAI_API_KEY"))
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_db():
     return firestore.client()
 
 # create module api
 @router.post("/modules", response_model=ModuleResponse)
-async def create_module( user_data: ModuleRequest, db: firestore.client = Depends(get_db), token: str = Depends(validate_firebase_token)):
+async def create_module( user_data: ModuleRequest, db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
+        await update_credit(token=token, amount=0.05, type=CreditTypeEnum.createModule, db=db)
         # get assistant info
         assistant = openai_client.beta.assistants.retrieve(user_data.assistant_id)
+
+        # user info
+        userFromToken = await validate_firebase_token(token)
+        user_id = userFromToken.get("uid")
 
         # create a new thread
         thread = openai_client.beta.threads.create()
@@ -37,18 +45,20 @@ async def create_module( user_data: ModuleRequest, db: firestore.client = Depend
                 "name": user_data.name,
                 "assistant": assistant.model_dump(),
                 "thread_id": thread_id,
-                "created_at": current_time
+                "created_at": current_time,
+                "user_id": user_id
             }
         )
         
-        return ModuleResponse(id=module_doc_ref.id, name=user_data.name, assistant=assistant, thread_id=thread_id, created_at=current_time)
+        return ModuleResponse(id=module_doc_ref.id, name=user_data.name, assistant=assistant, thread_id=thread_id, created_at=current_time, user_id=user_id)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
 # update module api
 @router.put("/modules/{id}")
-async def update_module(id: str, user_data: ModuleRequest, db: firestore.client = Depends(get_db), token: str = Depends(validate_firebase_token)):
+async def update_module(id: str, user_data: ModuleRequest, db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
+        await update_credit(token=token, amount=0.01, type=CreditTypeEnum.updateModule, db=db)
         # update db
         doc_ref = db.collection("modules").document(id)
 
@@ -68,8 +78,9 @@ async def update_module(id: str, user_data: ModuleRequest, db: firestore.client 
     
 # delete module api
 @router.delete("/modules/{id}")
-async def delete_module(id: str, db: firestore.client = Depends(get_db), token: str = Depends(validate_firebase_token)):
+async def delete_module(id: str, db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
+        await validate_firebase_token(token)
         # delete doc from db
         db.collection("modules").document(id).delete()
         
@@ -79,8 +90,9 @@ async def delete_module(id: str, db: firestore.client = Depends(get_db), token: 
     
 # list modules api
 @router.get("/modules", response_model=List[ModuleResponse])
-async def list_modules(order: str = Query("name"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Depends(validate_firebase_token)):
+async def list_modules(order: str = Query("name"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
+        await validate_firebase_token(token)
         # fetch all documents
         modules_ref = db.collection("modules").stream()
         
