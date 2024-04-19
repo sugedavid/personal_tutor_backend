@@ -9,3 +9,4 @@ pydantic_extra_types
 python-dotenv
 firebase_admin
 openai
+python-multipart

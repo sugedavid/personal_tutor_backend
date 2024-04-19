@@ -12,3 +12,4 @@ class ModuleResponse(BaseModel):
     assistant: object
     thread_id:  str
     created_at: int
+    user_id: str

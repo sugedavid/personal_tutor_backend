@@ -26,7 +26,8 @@ class Assistant(BaseModel):
     tools: List[AssistantTools]
     file_ids: List[str]
     metadata: Dict[str, Any]
-
+    
 class AssistantResponse(BaseModel):
-    object: str
-    data: List[Assistant]
+    id: str
+    assistant: Assistant
+    user_id: str
