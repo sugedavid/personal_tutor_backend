@@ -50,3 +50,30 @@ async def list_credits(order_by: str = Query("created_at"), limit: int = Query(2
         return credits_data
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# get credit summary  
+@router.get("/credits-summary")
+async def get_credit_summary(db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
+    try:
+         # user info
+        userFromToken = await validate_firebase_token(token)
+        user_id = userFromToken.get("uid")
+
+        credits_ref = db.collection("credits").where("user_id", "==", user_id).stream()
+
+        summary = {}
+        for doc in credits_ref:
+            credit_data = doc.to_dict()
+            credit_type = credit_data["type"]
+            amount = credit_data["amount"]
+            
+            # add the amount to the summary for the corresponding type
+            if credit_type in summary:
+                summary[credit_type] += amount
+            else:
+                summary[credit_type] = amount
+        
+        return summary
+
+    except Exception as e:
+        return {"error": str(e)}
