@@ -1,4 +1,5 @@
 import os
+from os import getenv
 from contextlib import asynccontextmanager
 
 import firebase_admin
@@ -70,4 +71,5 @@ app.include_router(messages_router, prefix="/v1", tags=["Messages"], dependencie
 app.include_router(credits_router, prefix="/v1", tags=["Credits"], dependencies=[Depends(limit)])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", debug=True, reload=True)
+    port = int(getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, debug=True, reload=True)

@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "routes": [{ "src": "/(.*)", "dest": "app/api.py" }],
+  "env": {
+    "PERSONAL_TUTOR_OPENAI_API_KEY": "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"
+  }
+}
