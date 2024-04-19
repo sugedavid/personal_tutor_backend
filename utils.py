@@ -48,7 +48,7 @@ async def update_credit(token: str, amount: str, type: CreditTypeEnum, db: fires
                 new_credits = round(user_data["credits"] - amount, 2)
 
                 if new_credits <= 0:
-                    raise HTTPException(status_code=400, detail=str("Insufficient credit balance. Top up to {type}"))
+                    raise ValueError("Insufficient credit balance. Top up to {type.name}")
             
             user_ref.update(
                 {
@@ -69,6 +69,9 @@ async def update_credit(token: str, amount: str, type: CreditTypeEnum, db: fires
                 "created_at": current_time
             }
         )
+
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Insufficient credit balance. Top up to use this service")
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

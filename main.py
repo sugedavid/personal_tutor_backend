@@ -36,6 +36,8 @@ limit = RateLimiter(times=20, seconds=60)
 origins = [
     "http://localhost",
     "http://localhost:3000",
+    "https://personal-tutor-web.vercel.app",
+    "https://personal-tutor-web-git-master-sugedavids-projects.vercel.app"
 ]
 
 app.add_middleware(
