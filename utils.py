@@ -43,9 +43,9 @@ async def update_credit(token: str, amount: str, type: CreditTypeEnum, db: fires
         if user.exists:
             user_data = user.to_dict()
             if type == CreditTypeEnum.topUp:
-                new_credits = user_data["credits"] + amount
+                new_credits = round(user_data["credits"] + amount, 2)
             else:
-                new_credits = user_data["credits"] - amount
+                new_credits = round(user_data["credits"] - amount, 2)
 
                 if new_credits <= 0:
                     raise HTTPException(status_code=400, detail=str("Insufficient credit balance. Top up to {type}"))
