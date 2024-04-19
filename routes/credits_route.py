@@ -31,11 +31,14 @@ async def create_credit(credit_data: CreditRequest, db: firestore.client = Depen
     
 # list credits api
 @router.get("/credits", response_model=List[CreditResponse])
-async def list_credits(order: str = Query("created_at"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
+async def list_credits(order_by: str = Query("created_at"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
-        await validate_firebase_token(token)
+        # user info
+        userFromToken = await validate_firebase_token(token)
+        user_id = userFromToken.get("uid")
+
         # fetch all documents
-        credits_ref = db.collection("credits").stream()
+        credits_ref = db.collection("credits").where("user_id", "==", user_id).order_by(order_by).limit(limit).stream()
         
         # parse documents
         credits_data = []

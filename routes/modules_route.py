@@ -90,11 +90,14 @@ async def delete_module(id: str, db: firestore.client = Depends(get_db), token: 
     
 # list modules api
 @router.get("/modules", response_model=List[ModuleResponse])
-async def list_modules(order: str = Query("name"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
+async def list_modules(order_by: str = Query("name"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
-        await validate_firebase_token(token)
+        # user info
+        userFromToken = await validate_firebase_token(token)
+        user_id = userFromToken.get("uid")
+
         # fetch all documents
-        modules_ref = db.collection("modules").stream()
+        modules_ref = db.collection("modules").where("user_id", "==", user_id).order_by(order_by).limit(limit).stream()
         
         # parse documents
         modules_data = []

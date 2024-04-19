@@ -7,9 +7,11 @@ class UserRegistrationRequest(BaseModel):
     email: str
     password: str
 
-class UserRegistrationResponse(BaseModel):
+class UserResponse(BaseModel):
     user_id: str
     first_name: str
     last_name: str
     display_name: str
     email: str
+    credits: float
+    currency: str

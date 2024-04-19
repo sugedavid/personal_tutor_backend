@@ -15,7 +15,7 @@ from openai import OpenAI
 from routes.credits_route import router as credits_router
 from routes.messages_route import router as messages_router
 from routes.modules_route import router as modules_router
-from routes.registration_route import router as registration_router
+from routes.user_route import router as user_router
 from routes.tutors_route import router as tutors_router
 
 
@@ -61,7 +61,7 @@ async def open_docs():
     return RedirectResponse(url="/docs")
 
 # routes config
-app.include_router(registration_router, prefix="/v1", tags=["User"], dependencies=[Depends(limit)])
+app.include_router(user_router, prefix="/v1", tags=["Users"], dependencies=[Depends(limit)])
 app.include_router(tutors_router, prefix="/v1", tags=["Tutors"], dependencies=[Depends(limit)])
 app.include_router(modules_router, prefix="/v1", tags=["Modules"], dependencies=[Depends(limit)])
 app.include_router(messages_router, prefix="/v1", tags=["Messages"], dependencies=[Depends(limit)])

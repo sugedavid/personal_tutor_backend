@@ -96,16 +96,14 @@ async def delete_tutor(assistant_id: str, db: firestore.client = Depends(get_db)
     
 # list tutors api
 @router.get("/tutors", response_model=List[AssistantResponse])
-async def list_tutors(order: str = Query("desc"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
+async def list_tutors(order_by: str = Query("desc"), limit: int = Query(20), db: firestore.client = Depends(get_db), token: str = Security(oauth2_scheme)):
     try:
-        await validate_firebase_token(token)
-
         # user info
         userFromToken = await validate_firebase_token(token)
         user_id = userFromToken.get("uid")
       
         # fetch all documents
-        doc_ref = db.collection("tutors").where("user_id", "==", user_id).stream()
+        doc_ref = db.collection("tutors").where("user_id", "==", user_id).order_by(order_by).limit(limit).stream()
         
         # parse documents
         tutors_data = []
