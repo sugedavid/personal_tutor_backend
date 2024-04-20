@@ -3,7 +3,6 @@ fastapi-limiter
 uvicorn[standard]
 redis
 requests
-pillow
 pydantic
 pydantic_extra_types
 python-dotenv

@@ -84,7 +84,7 @@ async def delete_tutor(assistant_id: str, db: firestore.client = Depends(get_db)
     try:
         await validate_firebase_token(token)
         # delete assistant
-        await openai_client.beta.assistants.delete(
+        openai_client.beta.assistants.delete(
             assistant_id=assistant_id
         )
          # delete doc from db
