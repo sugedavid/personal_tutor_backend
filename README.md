@@ -46,16 +46,11 @@ Backend for the Personal Tutor Client
 
 1. Launch the Docker application.
 
-2. To build the Docker image, use the command at the root of the project:
+2. To build the image (if not already built) and start both the Redis server and the FastAPI application in separate containers:
 
 ```
-docker build -t personal_tutor_backend .
-```
+docker compose up
 
-3. To run the Docker container, use the command at the root of the project:
-
-```
-docker run --env-file .env -d -p 8000:8000 personal_tutor_backend
 ```
 
 ## Redis - Rate Limiting

@@ -10,7 +10,7 @@ class CreditTypeEnum(str, Enum):
     updateTutor = 'Update Tutor'
     createModule = 'Create Module'
     updateModule = 'Update Module'
-    personalTutor = 'Chat with Personal Tutor'
+    personalTutor = 'Chat'
 class CreditRequest(BaseModel):
     amount: float
 

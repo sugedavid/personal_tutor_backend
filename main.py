@@ -21,7 +21,8 @@ from routes.tutors_route import router as tutors_router
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    redis_connection = redis.from_url("redis://localhost:6379", encoding="utf8")
+    redis_host = os.environ.get("REDIS_HOST", "localhost")
+    redis_connection = redis.from_url(f"redis://{redis_host}:6379", encoding="utf8")
     await FastAPILimiter.init(redis_connection)
     yield
     await FastAPILimiter.close()
