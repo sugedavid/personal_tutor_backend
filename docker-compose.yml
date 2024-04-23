@@ -2,13 +2,13 @@ version: '3.8'
 
 services:
   redis:
-    image: personaltutorfastapi.azurecr.io/redis:alpine
+    image: redis:alpine
     ports:
       - '6379:6379'
 
   fastapi:
     build: .
-    image: personaltutorfastapi.azurecr.io/personal_tutor_backend:build-tag-1
+    image: personaltutorfastapi.azurecr.io/personal_tutor_backend:latest
     env_file:
       - .env
     ports:
