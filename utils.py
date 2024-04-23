@@ -70,8 +70,8 @@ async def update_credit(token: str, amount: str, type: CreditTypeEnum, db: fires
             }
         )
 
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Insufficient credit balance. Top up to use this service")
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
     
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
