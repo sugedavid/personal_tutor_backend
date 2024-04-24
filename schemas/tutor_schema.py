@@ -24,7 +24,6 @@ class Assistant(BaseModel):
     model: str
     instructions: str
     tools: List[AssistantTools]
-    file_ids: List[str]
     metadata: Dict[str, Any]
     
 class AssistantResponse(BaseModel):
